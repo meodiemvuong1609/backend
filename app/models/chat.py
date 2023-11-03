@@ -1,8 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
-
-from app.models import Base
+from app.models.account import Base
 
 class ChatRoomAccount(Base):
     __tablename__ = 'chat_chatroomaccount'

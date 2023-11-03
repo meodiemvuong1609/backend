@@ -1,5 +1,2 @@
-from typing import Any
-from sqlalchemy.ext.declarative import declarative_base
-from .account import Account
+from .account import Account, Base
 from .chat import ChatRoom, ChatRoomAccount, ChatMessage
-Base: Any = declarative_base()

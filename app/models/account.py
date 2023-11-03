@@ -1,8 +1,9 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
 
-from app.models import Base
+Base = declarative_base()
+
 
 class Account(Base):
     __tablename__   = "account_account"
