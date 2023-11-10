@@ -18,3 +18,13 @@ class Account(Base):
 
     chat_rooms      = relationship("ChatRoom", secondary="chat_chatroomaccount", back_populates="member")
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "fullname": self.fullname,
+            "is_active": self.is_active,
+            "is_online": self.is_online
+        }
+

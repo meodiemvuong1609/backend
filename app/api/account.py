@@ -6,6 +6,14 @@ from app.models.account import Account
 
 account_router = APIRouter()
 
+
+@account_router.get("/account/api/me/")
+@is_authenticated
+async def account_get_me(request: Request):
+  session = get_session()
+  user = session.query(Account).filter(Account.id == request.user_id).first()
+  return convert_response("Success", 200, user.to_dict())
+
 @account_router.post("/account/api/register/")
 def account_register(account: AccountBase):
   session = get_session()

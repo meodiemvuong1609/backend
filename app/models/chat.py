@@ -15,9 +15,17 @@ class ChatRoom(Base):
 
     id              = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     title           = sa.Column(sa.String(50), nullable=False)
-    type            = sa.Column(sa.String(10), nullable=False, default="DM")
+    type            = sa.Column(sa.String(10), nullable=False, default="PRIVATE")
+    user_created    = sa.Column(sa.Integer, ForeignKey('account_account.id'), nullable=False)
     member          = relationship("Account", secondary="chat_chatroomaccount", back_populates="chat_rooms")
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "type": self.type,
+            "user_created": self.user_created,
+        }
 class ChatMessage(Base):
     __tablename__   = "chat_chatmessage"
     id              = sa.Column(sa.Integer, primary_key=True, autoincrement=True)

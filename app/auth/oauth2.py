@@ -14,8 +14,8 @@ class OAuth2:
 
     def _create_token(self, payload: dict, expires_delta: timedelta):
         to_encode = payload.copy()
-        expire = datetime.utcnow() + expires_delta
-        to_encode.update({"exp": expire})
+        expire = datetime.now() + expires_delta
+        to_encode.update({"exp": expire.timestamp()})
         encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
         return encoded_jwt
 
@@ -30,12 +30,12 @@ class OAuth2:
 
         return access_token, refresh_token
 
-    def verify_token(self, token: str = Depends(lambda x: x.oauth2_scheme)):
+    def verify_token(self, token: str):
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             return payload
         except JWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            return False
 
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
