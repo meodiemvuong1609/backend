@@ -10,7 +10,7 @@ class ConnectionManager:
   def __init__(self):
     self.connections = {}
 
-  async def connect(self, user_id: int, websocket: WebSocket):
+  async def connect(self, user_id: int, websocket: WebSocket, db: Session = Depends(get_db)):
     await websocket.accept()
     if user_id in self.connections:
       self.connections[user_id].append(websocket)
@@ -28,17 +28,19 @@ manager = ConnectionManager()
 # WebSocket route to handle connections
 
 @account_socket_router.websocket("/ws/{user_id}/")
-async def websocket_endpoint(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
+async def websocket_account_online(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
+  account = db.query(Account).filter(Account.id == user_id).first()
+  account.is_online = True
+  db.commit()
   await manager.connect(user_id, websocket)
   try:
     while True:
-      db.query(Account).filter(Account.id == user_id).update({Account.is_online: True})
-      db.commit()
+      data = await websocket.receive_text()
+      await websocket.send_text(f"Message text was: {data}")
   except WebSocketDisconnect:
     manager.disconnect(user_id, websocket)
-    db.query(Account).filter(Account.id == user_id).update({Account.is_online: False})
-    await websocket.close()
-
+    account.is_online = False
+    db.commit()
 async def broadcast_message(user_id: int, message: str):
   if user_id in manager.connections:
     for connection in manager.connections[user_id]:

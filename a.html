@@ -13,6 +13,7 @@
     <script>
         const userId = 1;  // Replace with the actual user ID
         const chatroomId = 2;  // Replace with the actual chatroom ID
+        const socket_user = new WebSocket(`ws://localhost:8000/ws/${userId}/`);
         const socket = new WebSocket(`ws://localhost:8000/ws/${userId}/2/`);
         console.log("WebSocket connection created:", socket);
 
