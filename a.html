@@ -1,0 +1,41 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <input type="text" id="messageInput" placeholder="Enter message">
+    <button onclick="sendMessage()">Send Message</button>
+    <div id="output"></div>
+
+    <script>
+        const userId = 1;  // Replace with the actual user ID
+        const chatroomId = 2;  // Replace with the actual chatroom ID
+        const socket = new WebSocket(`ws://localhost:8000/ws/${userId}/2/`);
+        console.log("WebSocket connection created:", socket);
+
+        socket.onopen = (event) => {
+            console.log("WebSocket connection opened:", event);
+        };
+
+        socket.onmessage = (event) => {
+            const message = event.data;
+            console.log("Received message:", message);
+            document.getElementById("output").innerHTML = `<p>${message}</p>`;
+        };
+
+        socket.onclose = (event) => {
+            console.log("WebSocket connection closed:", event);
+        };
+
+        function sendMessage() {
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value;
+            socket.send(message);
+            messageInput.value = "";
+        }
+    </script>
+</body>
+</html>

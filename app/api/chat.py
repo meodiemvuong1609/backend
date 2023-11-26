@@ -13,6 +13,14 @@ def account_get_chatroom(request: Request, current_user: Account = Depends(get_c
   chatrooms = db.query(ChatRoom).join(ChatRoomAccount).filter(ChatRoomAccount.account_id == current_user.id).all()
   return convert_response("Success", 200, [chatroom.to_dict() for chatroom in chatrooms])
 
+@chat_router.get("/chat/api/chatroom/{chatroom_id}/")
+def account_get_chatroom(request: Request, chatroom_id: int, current_user: Account = Depends(get_current_user), db: Session = Depends(get_db)):
+  chatroom = db.query(ChatRoom).filter(ChatRoom.id == chatroom_id).first()
+  if chatroom is None:
+    return convert_response("Chatroom not found", 400)
+  return convert_response("Success", 200, chatroom.to_dict())
+
+
 @chat_router.post("/chat/api/chatroom/")
 def account_create_chatroom(chatroom: ChatRoomCreate, current_user: Account = Depends(get_current_user), db: Session = Depends(get_db)):
   chatroom_db = ChatRoom(

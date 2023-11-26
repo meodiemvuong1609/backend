@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.account import account_router
 from app.api.auth import auth_router
 from app.api.chat import chat_router
+from app.socket.account import account_socket_router
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost",],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -16,3 +17,4 @@ app.add_middleware(
 app.include_router(account_router)
 app.include_router(auth_router)
 app.include_router(chat_router)
+app.include_router(account_socket_router)

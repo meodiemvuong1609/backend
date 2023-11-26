@@ -6,7 +6,6 @@ from app.models.account import Account
 
 account_router = APIRouter()
 
-
 @account_router.get("/account/api/me/")
 async def account_get_me(request: Request, db: Session = Depends(get_db)):
   user = db.query(Account).filter(Account.id == request.user_id).first()
