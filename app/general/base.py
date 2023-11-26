@@ -1,9 +1,11 @@
+from app.models.account import Account
+from fastapi import HTTPException, Request, Depends
+from fastapi.responses import JSONResponse
 from app.auth.oauth2 import OAuth2
-from fastapi import Depends, Request, Response
-from fastapi.routing import APIRoute
-
+from sqlalchemy.orm import Session
+from app.database.session import get_session
 oauth2 = OAuth2("secret_key", "HS256", 30)
-
+from app import crud
 def convert_response(message, status_code, data=None, count=None):
   """
     Convert body response to normalization.
@@ -21,14 +23,20 @@ def convert_response(message, status_code, data=None, count=None):
 
   return response
 
-def is_authenticated(func):
-  def wrapper(request: Request):
-    access_token = request.cookies.get("access_token")
-    if access_token is None:
-      return convert_response("Missing access token", 400)
-    payload = oauth2.verify_token(access_token)
-    if not payload:
-      return convert_response("Invalid access token", 400)
-    request.user_id = payload["sub"]
-    return func(request)
-  return wrapper
+def get_db():
+  db = get_session()
+  try:
+    yield db
+  finally:
+    db.close()
+
+def get_current_user(request: Request, db: Session = Depends(get_db))->Account:
+  access_token = request.cookies.get("access_token")
+  if access_token is None:
+    raise HTTPException(detail="Missing access token", status_code=400)
+  payload = oauth2.verify_token(access_token)
+  if not payload:
+    raise HTTPException(detail="Invalid access token", status_code=400)
+  account_id = payload["sub"]
+  account = crud.account.get_by_id(db, id=account_id)
+  return account

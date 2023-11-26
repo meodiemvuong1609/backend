@@ -8,15 +8,12 @@ account_router = APIRouter()
 
 
 @account_router.get("/account/api/me/")
-@is_authenticated
-async def account_get_me(request: Request):
-  session = get_session()
-  user = session.query(Account).filter(Account.id == request.user_id).first()
+async def account_get_me(request: Request, db: Session = Depends(get_db)):
+  user = db.query(Account).filter(Account.id == request.user_id).first()
   return convert_response("Success", 200, user.to_dict())
 
 @account_router.post("/account/api/register/")
-def account_register(account: AccountBase):
-  session = get_session()
+def account_register(account: AccountBase, db: Session = Depends(get_db)):
   account_db = Account(
     username=account.username,
     password=oauth2.get_password_hash(account.password),
@@ -26,11 +23,11 @@ def account_register(account: AccountBase):
     is_online=False
   )
   try:
-    session.add(account_db)
-    session.commit()
+    db.add(account_db)
+    db.commit()
     return convert_response("Success", 200)
   except:
-    session.rollback()
+    db.rollback()
     return convert_response("Error", 400)
   finally:
-    session.close()
+    db.close()
