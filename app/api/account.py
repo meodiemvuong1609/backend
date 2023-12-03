@@ -7,9 +7,14 @@ from app.models.account import Account
 account_router = APIRouter()
 
 @account_router.get("/account/api/me/")
-async def account_get_me(request: Request, db: Session = Depends(get_db)):
-  user = db.query(Account).filter(Account.id == request.user_id).first()
-  return convert_response("Success", 200, user.to_dict())
+async def account_get_me(request: Request, db: Session = Depends(get_db), current_user: Account = Depends(get_current_user)):
+  user = current_user
+  return user.to_dict()
+
+@account_router.get("/account/api/account/")
+async def account_list_account(request: Request, db: Session = Depends(get_db), current_user: Account = Depends(get_current_user)):
+  accounts = db.query(Account).all()
+  return convert_response("Success", 200, [account.to_dict() for account in accounts])
 
 @account_router.post("/account/api/register/")
 def account_register(account: AccountBase, db: Session = Depends(get_db)):
@@ -28,5 +33,3 @@ def account_register(account: AccountBase, db: Session = Depends(get_db)):
   except:
     db.rollback()
     return convert_response("Error", 400)
-  finally:
-    db.close()

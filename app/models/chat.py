@@ -9,7 +9,6 @@ class ChatRoomAccount(Base):
     id              = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     chatroom_id     = sa.Column(sa.Integer, ForeignKey('chat_chatroom.id'), primary_key=True)
     account_id      = sa.Column(sa.Integer, ForeignKey('account_account.id'), primary_key=True)
-
 class ChatRoom(Base):
     __tablename__   = "chat_chatroom"
 
@@ -20,6 +19,7 @@ class ChatRoom(Base):
     member          = relationship("Account", secondary="chat_chatroomaccount", back_populates="chat_rooms")
 
     def to_dict(self):
+        print(self.member)
         return {
             "id": self.id,
             "title": self.title,

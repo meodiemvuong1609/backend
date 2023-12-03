@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from app.auth.oauth2 import OAuth2
 from sqlalchemy.orm import Session
 from app.database.session import get_session
-oauth2 = OAuth2("secret_key", "HS256", 30)
+oauth2 = OAuth2("secret_key", "HS256", 300)
 from app import crud
 def convert_response(message, status_code, data=None, count=None):
   """

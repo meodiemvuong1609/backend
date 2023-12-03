@@ -3,10 +3,10 @@ from pydantic import BaseModel
 
 
 class AccountBase(BaseModel):
-  username: Optional[int]
-  password: Optional[int]
-  email: Optional[int]
-  fullname: Optional[int] = None
+  username: Optional[str]
+  password: Optional[str]
+  email: Optional[str]
+  fullname: Optional[str] = None
 class AccountCreate(AccountBase):
     pass
 
