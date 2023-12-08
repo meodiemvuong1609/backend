@@ -11,6 +11,11 @@ async def account_get_me(request: Request, db: Session = Depends(get_db), curren
   user = current_user
   return user.to_dict()
 
+@account_router.get("/account/api/userselect/")
+async def account_get_me(request: Request, db: Session = Depends(get_db), current_user: Account = Depends(get_current_user)):
+  users = db.query(Account).filter(Account.id != current_user.id).all()
+  return [user.to_dict() for user in users]
+
 @account_router.get("/account/api/account/")
 async def account_list_account(request: Request, db: Session = Depends(get_db), current_user: Account = Depends(get_current_user)):
   accounts = db.query(Account).all()

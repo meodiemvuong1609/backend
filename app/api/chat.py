@@ -44,6 +44,7 @@ def account_create_chatroom(chatroom: ChatRoomCreate, current_user: Account = De
   try:
     db.add(chatroom_db)
     db.commit()
+    chatroom.account.append(current_user.id)
     chatroom_accounts_db = [ChatRoomAccount(
       chatroom_id=chatroom_db.id,
       account_id=account
