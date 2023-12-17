@@ -1,69 +1,74 @@
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket, WebSocketDisconnect, Depends
 from fastapi.routing import APIRouter
 from app.general.base import *
 from app.models.chat import ChatMessage, ChatRoomAccount
 from app.models.account import Account
+import json
+from datetime import datetime
 
 account_socket_router = APIRouter()
 
 class ConnectionManager:
   def __init__(self):
-    self.connections = {}
-
-  async def connect(self, user_id: int, websocket: WebSocket, db: Session = Depends(get_db)):
-    await websocket.accept()
-    if user_id in self.connections:
-      self.connections[user_id].append(websocket)
-    else:
-      self.connections[user_id] = [websocket]
-
-  def disconnect(self, user_id: int, websocket: WebSocket):
-    if user_id in self.connections:
-      self.connections[user_id].remove(websocket)
-      if not self.connections[user_id]:
-        del self.connections[user_id]
-
-manager = ConnectionManager()
-
-# WebSocket route to handle connections
-
-@account_socket_router.websocket("/ws/{user_id}/")
-async def websocket_account_online(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
-  account = db.query(Account).filter(Account.id == user_id).first()
-  account.is_online = True
-  db.commit()
-  await manager.connect(user_id, websocket)
-  try:
-    while True:
-      data = await websocket.receive_text()
-      await websocket.send_text(f"Message text was: {data}")
-  except WebSocketDisconnect:
-    manager.disconnect(user_id, websocket)
-    account.is_online = False
+    self.active_connections = []
+    self.rooms = []
+  
+  async def addOnlineUser(self, user_id: int, db=get_session()):
+    account = db.query(Account).filter(Account.id == user_id).first()
+    account.is_online = True
     db.commit()
-async def broadcast_message(user_id: int, message: str):
-  if user_id in manager.connections:
-    for connection in manager.connections[user_id]:
-      await connection.send_text(message)
+    db.refresh(account)
+    return account
 
-@account_socket_router.websocket("/ws/{user_id}/{chatroom_id}/")
-async def chat_endpoint(websocket: WebSocket, user_id: int, chatroom_id: int, db: Session = Depends(get_db)):
-  await manager.connect(user_id, websocket)
+  def db_sync_message(self, message: dict, room_id: str, db=get_session()):
+    chat_message = ChatMessage(
+      chatroom=room_id,
+      account=message["userId"],
+      message=message["message"],
+      created_at=datetime.now()
+    )
+    db.add(chat_message)
+    db.commit()
+    db.refresh(chat_message)
+    return chat_message
+
+  async def connect(self, websocket: WebSocket, user_id: int):
+    try:
+      await websocket.accept()
+      self.active_connections.append({"user_id": user_id, "websocket": websocket})
+      await self.addOnlineUser(user_id)
+
+      await self.send_online_users()
+    except:
+      pass
+  async def disconnect(self, websocket: WebSocket, user_id: int):
+    try:
+      self.active_connections.remove({"user_id": user_id, "websocket": websocket})
+      await self.send_online_users()
+    except:
+      pass
+
+  async def send_online_users(self, db=get_session()):
+    online_users = db.query(Account).filter(Account.is_online == True).all()
+    message = {"action": "onlineUser", "userList": [user.id for user in online_users]}
+    for connection in self.active_connections:
+      await connection["websocket"].send_json(message)
+
+  async def send_message(self, message: dict, room_id: str):
+    for connection in self.active_connections:
+      await connection["websocket"].send_json({"type": "chat_message", "message": message})
+  async def send_message_to_room(self, message: dict, room_id: str):
+    await self.send_message(message, room_id)
+    self.db_sync_message(message, room_id)
+manager = ConnectionManager()
+@account_socket_router.websocket("/ws/{user_id}/")
+async def websocket_endpoint(websocket: WebSocket, user_id: int, ):
+  await manager.connect(websocket, user_id)
   try:
     while True:
       data = await websocket.receive_text()
-      # Save the chat message to the database
-      message = ChatMessage(chatroom=chatroom_id, account=user_id, message=data)
-      db.add(message)
-      db.commit()
-      # Broadcast the message to all members of the chat room
-      members = (
-        db.query(ChatRoomAccount)
-        .filter(ChatRoomAccount.chatroom_id == chatroom_id)
-        .all()
-      )
-      for member in members:
-        if member.account_id != user_id:
-          await broadcast_message(member.account_id, data)
+      message = json.loads(data)
+      await manager.send_message_to_room(message, message["roomId"])
   except WebSocketDisconnect:
-      manager.disconnect(user_id, websocket)
+    pass
+    # manager.disconnect(websocket, user_id)

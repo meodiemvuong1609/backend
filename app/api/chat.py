@@ -58,5 +58,5 @@ def account_create_chatroom(chatroom: ChatRoomCreate, current_user: Account = De
 
 @chat_router.get("/chat/api/chatroommessage/{chatroom_id}/")
 def get_chat_message(chatroom_id, current_user: Account = Depends(get_current_user), db: Session = Depends(get_db)):
-  chatmessage = (db.query(ChatMessage).join(Account, ChatMessage.chatroom==chatroom_id).order_by(desc("created_at")).limit(10).all())
+  chatmessage = (db.query(ChatMessage).join(Account, ChatMessage.chatroom==chatroom_id).order_by(desc("created_at")).all())
   return chatmessage
