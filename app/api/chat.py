@@ -16,8 +16,8 @@ def account_get_chatroom(request: Request, current_user: Account = Depends(get_c
 
 @chat_router.get("/chat/api/chatroom/{chatroom_id}/")
 def account_get_chatroom(request: Request, chatroom_id: int, current_user: Account = Depends(get_current_user), db: Session = Depends(get_db)):
-  chatroom = db.query(ChatRoom).join(ChatRoomAccount, chatroom_id==ChatRoomAccount.chatroom_id).first()
-
+  chatroom = db.query(ChatRoom).filter(ChatRoom.id==chatroom_id).first()
+  members = db.query(ChatRoomAccount).filter(ChatRoomAccount.chatroom_id == chatroom_id).all()
   if chatroom is None:
     raise HTTPException(status_code=404, detail="Chatroom not found")
   response = {
@@ -26,12 +26,8 @@ def account_get_chatroom(request: Request, chatroom_id: int, current_user: Accou
     "type": chatroom.type,
     "user_created": chatroom.user_created,
     "member": [{
-      "id": member.id,
-      "email": member.email,
-      "fullname": member.fullname,
-      "is_online": member.is_online
-    
-    } for member in chatroom.member]
+      "id": member.account_id,
+    } for member in members]
   }
   return response
 
@@ -39,7 +35,8 @@ def account_get_chatroom(request: Request, chatroom_id: int, current_user: Accou
 def account_create_chatroom(chatroom: ChatRoomCreate, current_user: Account = Depends(get_current_user), db: Session = Depends(get_db)):
   chatroom_db = ChatRoom(
     title=chatroom.title,
-    user_created=current_user.id
+    type=chatroom.type,
+    user_created=current_user.id,
   )
   try:
     db.add(chatroom_db)

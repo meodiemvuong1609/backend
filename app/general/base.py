@@ -32,8 +32,15 @@ def get_db():
 
 def get_current_user(request: Request, db: Session = Depends(get_db))->Account:
   access_token = request.cookies.get("access_token")
+  refresh_token = request.cookies.get("refresh_token")
+  if access_token is None and refresh_token is None:
+    raise HTTPException(detail="Missing token", status_code=400)
   if access_token is None:
-    raise HTTPException(detail="Missing access token", status_code=400)
+    payload = oauth2.verify_token(refresh_token)
+    if not payload:
+      raise HTTPException(detail="Invalid refresh token", status_code=400)
+    access_token, refresh_token = oauth2.create_access_refresh_token(payload["sub"])
+
   payload = oauth2.verify_token(access_token)
   if not payload:
     raise HTTPException(detail="Invalid access token", status_code=400)
